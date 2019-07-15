@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -44,19 +45,44 @@ func main() {
 
 	// basic metrics + client metrics + exporter own metrics (ProcessCollector and GoCollector)
 	{
-		prometheus.MustRegister(basic.New(cfg, sess))
-		prometheus.MustRegister(client)
-		http.Handle(*basicMetricsPathF, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{
+		// Separate instance of basic collector for backward compatibility.  See: https://jira.percona.com/browse/PMM-1901.
+		basicCollector := basic.New(cfg, sess)
+		registry := prometheus.NewRegistry()
+		registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
+		registry.MustRegister(prometheus.NewGoCollector())
+		registry.MustRegister(basicCollector)
+		registry.MustRegister(client)
+		http.Handle(*basicMetricsPathF, promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 			ErrorLog:      log.NewErrorLogger(),
 			ErrorHandling: promhttp.ContinueOnError,
 		}))
 	}
 
+	// This collector should be only one for both cases.
+	// It creates goroutines which sends API requests to Amazon in background.
+	enhancedCollector := enhanced.NewCollector(sess)
+
 	// enhanced metrics
 	{
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(enhanced.NewCollector(sess))
+		registry.MustRegister(enhancedCollector)
 		http.Handle(*enhancedMetricsPathF, promhttp.HandlerFor(registry, promhttp.HandlerOpts{
+			ErrorLog:      log.NewErrorLogger(),
+			ErrorHandling: promhttp.ContinueOnError,
+		}))
+	}
+
+	// all metrics
+	{
+		// Create separate instance of basic collector and remove metrics which cross with enhanced collector.
+		// Made for backward compatibility. See: https://jira.percona.com/browse/PMM-1901.
+		basicCollector := basic.New(cfg, sess)
+		basicCollector.Exclude("CPUUtilization", "FreeStorageSpace", "FreeableMemory")
+
+		prometheus.MustRegister(client)
+		prometheus.MustRegister(basicCollector)
+		prometheus.MustRegister(enhancedCollector)
+		http.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{
 			ErrorLog:      log.NewErrorLogger(),
 			ErrorHandling: promhttp.ContinueOnError,
 		}))
@@ -64,5 +90,6 @@ func main() {
 
 	log.Infof("Basic metrics   : http://%s%s", *listenAddressF, *basicMetricsPathF)
 	log.Infof("Enhanced metrics: http://%s%s", *listenAddressF, *enhancedMetricsPathF)
+	log.Infof("All metrics: http://%s%s", *listenAddressF, "/metrics")
 	log.Fatal(http.ListenAndServe(*listenAddressF, nil))
 }
