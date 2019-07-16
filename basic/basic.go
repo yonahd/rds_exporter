@@ -42,6 +42,8 @@ func New(config *config.Config, sessions *sessions.Sessions) *Exporter {
 	}
 }
 
+// ExcludeMetrics exclude some metrics from collector.
+// This need for resolve metric names conflicts when registering basic and enhanced collectors.
 func (e *Exporter) ExcludeMetrics(metrics ...string) {
 	var filtered []Metric
 	for _, v := range e.metrics {
