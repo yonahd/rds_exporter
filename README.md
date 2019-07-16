@@ -52,20 +52,46 @@ scrape_configs:
   - job_name: rds-basic
     scrape_interval: 60s
     scrape_timeout: 55s
-    metrics_path: /basic
     honor_labels: true
     static_configs:
       - targets:
         - 127.0.0.1:9042
+    params:
+        collect[]:
+          - basic
 
   - job_name: rds-enhanced
     scrape_interval: 10s
     scrape_timeout: 9s
-    metrics_path: /enhanced
     honor_labels: true
     static_configs:
       - targets:
         - 127.0.0.1:9042
+    params:
+        collect[]:
+          - enhanced
 ```
 
 `honor_labels: true` is important because exporter returns metrics with `instance` label set.
+
+## Collectors
+
+### Enabled by default
+
+Name     | Description 
+---------|-------------
+basic | Basic metrics from https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MonitoringOverview.html#monitoring-cloudwatch.
+enhanced | Enhanced metrics from https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Monitoring.OS.html.
+
+### Filtering enabled collectors
+
+The `rds_exporter` will expose all metrics from enabled collectors by default.
+
+For advanced use the `rds_exporter` can be passed an optional list of collectors to filter metrics. The `collect[]` parameter may be used multiple times.  In Prometheus configuration you can use this syntax under the [scrape config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#<scrape_config>).
+
+```
+  params:
+    collect[]:
+      - basic
+      - enhanced
+```

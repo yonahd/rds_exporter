@@ -42,7 +42,7 @@ func New(config *config.Config, sessions *sessions.Sessions) *Exporter {
 	}
 }
 
-func (e *Exporter) Exclude(metrics ...string) {
+func (e *Exporter) ExcludeMetrics(metrics ...string) {
 	var filtered []Metric
 	for _, v := range e.metrics {
 		if !contains(v.Name, metrics) {
