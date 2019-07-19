@@ -39,7 +39,7 @@ func New(config *config.Config, sessions *sessions.Sessions, enableOverlapping b
 	var m []Metric
 	m = append(m, Metrics...)
 	if enableOverlapping {
-		m = append(m, metricsOverlappingWithEnhancedCollector...)
+		m = append(m, MetricsOverlappingWithEnhancedCollector...)
 	}
 
 	return &Exporter{

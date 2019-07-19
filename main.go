@@ -120,7 +120,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Warnln("Couldn't create filtered metrics handler:", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", err)))
+		_, err := w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", err)))
+		if err != nil {
+			log.Errorln(err)
+		}
 		return
 	}
 	filteredHandler.ServeHTTP(w, r)

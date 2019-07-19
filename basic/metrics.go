@@ -421,7 +421,7 @@ var Metrics = []Metric{
 	},
 }
 
-var metricsOverlappingWithEnhancedCollector = []Metric{
+var MetricsOverlappingWithEnhancedCollector = []Metric{
 	{
 		Name: "CPUUtilization",
 		Desc: prometheus.NewDesc(
