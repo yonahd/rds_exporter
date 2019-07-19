@@ -105,15 +105,6 @@ var Metrics = []Metric{
 		),
 	},
 	{
-		Name: "CPUUtilization",
-		Desc: prometheus.NewDesc(
-			"node_cpu_average",
-			"The percentage of CPU utilization. Units: Percent",
-			[]string{"instance", "region"},
-			map[string]string{"cpu": "All", "mode": "total"},
-		),
-	},
-	{
 		Name: "CommitLatency",
 		Desc: prometheus.NewDesc(
 			"aws_rds_commit_latency_average",
@@ -226,24 +217,6 @@ var Metrics = []Metric{
 		Desc: prometheus.NewDesc(
 			"aws_rds_free_local_storage_average",
 			"FreeLocalStorage",
-			[]string{"instance", "region"},
-			map[string]string(nil),
-		),
-	},
-	{
-		Name: "FreeStorageSpace",
-		Desc: prometheus.NewDesc(
-			"node_filesystem_free",
-			"The amount of available storage space. Units: Bytes",
-			[]string{"instance", "region"},
-			map[string]string(nil),
-		),
-	},
-	{
-		Name: "FreeableMemory",
-		Desc: prometheus.NewDesc(
-			"node_memory_Cached",
-			"The amount of available random access memory. Units: Bytes",
 			[]string{"instance", "region"},
 			map[string]string(nil),
 		),
@@ -442,6 +415,36 @@ var Metrics = []Metric{
 		Desc: prometheus.NewDesc(
 			"aws_rds_write_throughput_average",
 			"The average number of bytes written to disk per second. Units: Bytes/Second",
+			[]string{"instance", "region"},
+			map[string]string(nil),
+		),
+	},
+}
+
+var metricsOverlappingWithEnhancedCollector = []Metric{
+	{
+		Name: "CPUUtilization",
+		Desc: prometheus.NewDesc(
+			"node_cpu_average",
+			"The percentage of CPU utilization. Units: Percent",
+			[]string{"instance", "region"},
+			map[string]string{"cpu": "All", "mode": "total"},
+		),
+	},
+	{
+		Name: "FreeStorageSpace",
+		Desc: prometheus.NewDesc(
+			"node_filesystem_free",
+			"The amount of available storage space. Units: Bytes",
+			[]string{"instance", "region"},
+			map[string]string(nil),
+		),
+	},
+	{
+		Name: "FreeableMemory",
+		Desc: prometheus.NewDesc(
+			"node_memory_Cached",
+			"The amount of available random access memory. Units: Bytes",
 			[]string{"instance", "region"},
 			map[string]string(nil),
 		),

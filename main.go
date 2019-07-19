@@ -15,6 +15,7 @@ import (
 	"github.com/percona/rds_exporter/client"
 	"github.com/percona/rds_exporter/config"
 	"github.com/percona/rds_exporter/enhanced"
+	"github.com/percona/rds_exporter/factory"
 	"github.com/percona/rds_exporter/sessions"
 )
 
@@ -47,7 +48,7 @@ func main() {
 	// basic metrics + client metrics + exporter own metrics (ProcessCollector and GoCollector)
 	// NOTE: This handler was retained for backward compatibility. See: https://jira.percona.com/browse/PMM-1901.
 	{
-		basicCollector := basic.New(cfg, sess)
+		basicCollector := basic.New(cfg, sess, true)
 
 		registry := prometheus.NewRegistry()
 		registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), "")) // from prometheus.DefaultGatherer
@@ -77,15 +78,9 @@ func main() {
 
 	// all metrics (with filtering)
 	{
-		// Create separate instance of basic collector and remove metrics which cross with enhanced collector.
-		basicCollector := basic.New(cfg, sess)
-		basicCollector.ExcludeMetrics("CPUUtilization", "FreeStorageSpace", "FreeableMemory")
-
-		prometheus.MustRegister(client)
-		http.Handle("/metrics", newHandler(map[string]prometheus.Collector{
-			"basic":    basicCollector,
-			"enhanced": enhancedCollector,
-		}))
+		f := factory.New(cfg, sess, map[string]prometheus.Collector{"enhanced": enhancedCollector, "client": client})
+		handler := newHandler(f)
+		http.Handle("/metrics", handler)
 	}
 
 	log.Infof("Metrics: http://%s%s", *listenAddressF, "/metrics")
@@ -97,11 +92,11 @@ func main() {
 // newHandler. It used for collectors filtering.
 type handler struct {
 	unfilteredHandler http.Handler
-	collectors        map[string]prometheus.Collector
+	factory           *factory.Collectors
 }
 
-func newHandler(collectors map[string]prometheus.Collector) *handler {
-	h := &handler{collectors: collectors}
+func newHandler(factory *factory.Collectors) *handler {
+	h := &handler{factory: factory}
 	if innerHandler, err := h.innerHandler(); err != nil {
 		log.Fatalf("Couldn't create metrics handler: %s", err)
 	} else {
@@ -132,17 +127,16 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
-	// clear all previously registered collector (to prevent repeatable registration).
-	for k, v := range h.collectors {
-		if ok := prometheus.Unregister(v); ok {
-			log.Infof("Collector '%s' was unregistered", k)
-		}
-	}
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), "")) // from prometheus.DefaultGatherer
+	registry.MustRegister(prometheus.NewGoCollector())                     // from prometheus.DefaultGatherer
+
+	collectors := h.factory.Create(filters)
 
 	// register all collectors by default.
 	if len(filters) == 0 {
-		for name, c := range h.collectors {
-			if err := prometheus.Register(c); err != nil {
+		for name, c := range collectors {
+			if err := registry.Register(c); err != nil {
 				return nil, err
 			}
 			log.Infof("Collector '%s' was registered", name)
@@ -151,8 +145,8 @@ func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 
 	// register only filtered collectors.
 	for _, name := range filters {
-		if c, ok := h.collectors[name]; ok {
-			if err := prometheus.Register(c); err != nil {
+		if c, ok := collectors[name]; ok {
+			if err := registry.Register(c); err != nil {
 				return nil, err
 			}
 			log.Infof("Collector '%s' was registered", name)
@@ -160,7 +154,7 @@ func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 	}
 
 	handler := promhttp.HandlerFor(
-		prometheus.DefaultGatherer,
+		registry,
 		promhttp.HandlerOpts{
 			ErrorLog:      log.NewErrorLogger(),
 			ErrorHandling: promhttp.ContinueOnError,

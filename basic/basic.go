@@ -33,34 +33,21 @@ type Exporter struct {
 }
 
 // New creates a new instance of a Exporter.
-func New(config *config.Config, sessions *sessions.Sessions) *Exporter {
+// enableOverlapping is using for backward compatibility.
+// See: https://jira.percona.com/browse/PMM-1901.
+func New(config *config.Config, sessions *sessions.Sessions, enableOverlapping bool) *Exporter {
+	var m []Metric
+	m = append(m, Metrics...)
+	if enableOverlapping {
+		m = append(m, metricsOverlappingWithEnhancedCollector...)
+	}
+
 	return &Exporter{
 		config:   config,
 		sessions: sessions,
-		metrics:  Metrics,
+		metrics:  m,
 		l:        log.With("component", "basic"),
 	}
-}
-
-// ExcludeMetrics exclude some metrics from collector.
-// This need for resolve metric names conflicts when registering basic and enhanced collectors.
-func (e *Exporter) ExcludeMetrics(metrics ...string) {
-	var filtered []Metric
-	for _, v := range e.metrics {
-		if !contains(v.Name, metrics) {
-			filtered = append(filtered, v)
-		}
-	}
-	e.metrics = filtered
-}
-
-func contains(metricName string, metrics []string) bool {
-	for _, v := range metrics {
-		if v == metricName {
-			return true
-		}
-	}
-	return false
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {

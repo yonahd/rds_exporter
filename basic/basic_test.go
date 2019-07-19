@@ -13,7 +13,7 @@ import (
 	"github.com/percona/rds_exporter/sessions"
 )
 
-func getExporter(t *testing.T) *Exporter {
+func getExporter(t *testing.T, enableOverlapping bool) *Exporter {
 	t.Helper()
 
 	cfg, err := config.Load("../config.yml")
@@ -21,11 +21,28 @@ func getExporter(t *testing.T) *Exporter {
 	client := client.New()
 	sess, err := sessions.New(cfg.Instances, client.HTTP(), false)
 	require.NoError(t, err)
-	return New(cfg, sess)
+	return New(cfg, sess, enableOverlapping)
 }
 
 func TestCollector_Describe(t *testing.T) {
-	c := getExporter(t)
+	c := getExporter(t, false)
+	ch := make(chan *prometheus.Desc)
+	go func() {
+		c.Describe(ch)
+		close(ch)
+	}()
+
+	const expected = 47
+	descs := make([]*prometheus.Desc, 0, expected)
+	for d := range ch {
+		descs = append(descs, d)
+	}
+
+	assert.Equal(t, expected, len(descs), "%+v", descs)
+}
+
+func TestCollector_Describe_WithOverlappingMetrics(t *testing.T) {
+	c := getExporter(t, true)
 	ch := make(chan *prometheus.Desc)
 	go func() {
 		c.Describe(ch)
@@ -42,7 +59,24 @@ func TestCollector_Describe(t *testing.T) {
 }
 
 func TestCollector_Collect(t *testing.T) {
-	c := getExporter(t)
+	c := getExporter(t, false)
+	ch := make(chan prometheus.Metric)
+	go func() {
+		c.Collect(ch)
+		close(ch)
+	}()
+
+	const expected = 91
+	metrics := make([]helpers.Metric, 0, expected)
+	for m := range ch {
+		metrics = append(metrics, *helpers.ReadMetric(m))
+	}
+
+	assert.Equal(t, expected, len(metrics), "%+v", metrics)
+}
+
+func TestCollector_Collect_WithOverlappingMetrics(t *testing.T) {
+	c := getExporter(t, true)
 	ch := make(chan prometheus.Metric)
 	go func() {
 		c.Collect(ch)
