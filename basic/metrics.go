@@ -421,6 +421,8 @@ var Metrics = []Metric{
 	},
 }
 
+// MetricsOverlappingWithEnhancedCollector metrics which overlapping with enhanced collector.
+// See: https://jira.percona.com/browse/PMM-1901.
 var MetricsOverlappingWithEnhancedCollector = []Metric{
 	{
 		Name: "CPUUtilization",
