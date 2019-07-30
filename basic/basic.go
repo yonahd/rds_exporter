@@ -24,9 +24,9 @@ var (
 type OverlappingMetrics bool
 
 const (
-	// EnableOverlapping flag for enabling overlapping version.
+	// EnableOverlapping flag for enabling overlapping metrics.
 	EnableOverlapping OverlappingMetrics = true
-	// DisableOverlapping flag for disabling overlapping version.
+	// DisableOverlapping flag for disabling overlapping metrics.
 	DisableOverlapping OverlappingMetrics = false
 )
 
