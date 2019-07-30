@@ -20,6 +20,16 @@ var (
 	)
 )
 
+// OverlappingMetrics flag.
+type OverlappingMetrics bool
+
+const (
+	// EnableOverlapping flag for enabling overlapping version.
+	EnableOverlapping OverlappingMetrics = true
+	// DisableOverlapping flag for disabling overlapping version.
+	DisableOverlapping OverlappingMetrics = false
+)
+
 type Metric struct {
 	Name string
 	Desc *prometheus.Desc
@@ -35,10 +45,10 @@ type Exporter struct {
 // New creates a new instance of a Exporter.
 // enableOverlapping is using for backward compatibility.
 // See: https://jira.percona.com/browse/PMM-1901.
-func New(config *config.Config, sessions *sessions.Sessions, enableOverlapping bool) *Exporter {
+func New(config *config.Config, sessions *sessions.Sessions, enableMetrics OverlappingMetrics) *Exporter {
 	var m []Metric
 	m = append(m, Metrics...)
-	if enableOverlapping {
+	if enableMetrics {
 		m = append(m, MetricsOverlappingWithEnhancedCollector...)
 	}
 

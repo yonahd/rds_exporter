@@ -28,14 +28,22 @@ func New(cfg *config.Config, sess *sessions.Sessions, predefined map[string]prom
 func (f *Collectors) Create(filters []string) map[string]prometheus.Collector {
 	c := make(map[string]prometheus.Collector)
 
-	// When we have only 1 filter and this is basic one, we need it with all metrics.
-	if len(filters) == 1 && filters[0] == "basic" {
-		c["basic"] = basic.New(f.config, f.sessions, true)
-		return c
-	}
 	// When we have no filters, all collectors will be enabled, so create "basic" one without overlapping metrics.
 	if len(filters) == 0 {
-		c["basic"] = basic.New(f.config, f.sessions, false)
+		c["basic"] = basic.New(f.config, f.sessions, basic.DisableOverlapping)
+	}
+	// When we have only 1 filter and this is basic one, we need it with all metrics.
+	if len(filters) == 1 && filterIn(filters, "basic") {
+		c["basic"] = basic.New(f.config, f.sessions, basic.EnableOverlapping)
+		return c
+	}
+	// When we have more than 1 filters and have basic one...
+	if len(filters) > 1 && filterIn(filters, "basic") {
+		if filterIn(filters, "enhanced") {
+			c["basic"] = basic.New(f.config, f.sessions, basic.DisableOverlapping)
+		} else {
+			c["basic"] = basic.New(f.config, f.sessions, basic.EnableOverlapping)
+		}
 	}
 	// Just adding all predefined collectors in map.
 	for name, collector := range f.predefined {
@@ -43,4 +51,13 @@ func (f *Collectors) Create(filters []string) map[string]prometheus.Collector {
 	}
 
 	return c
+}
+
+func filterIn(slice []string, filter string) bool {
+	for _, v := range slice {
+		if v == filter {
+			return true
+		}
+	}
+	return false
 }
