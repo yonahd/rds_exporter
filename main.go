@@ -78,7 +78,14 @@ func main() {
 
 	// all metrics (with filtering)
 	{
-		f := factory.New(cfg, sess, map[string]prometheus.Collector{"enhanced": enhancedCollector, "client": client})
+		psCollector := prometheus.NewProcessCollector(os.Getpid(), "") // from prometheus.DefaultGatherer
+		goCollector := prometheus.NewGoCollector()                     // from prometheus.DefaultGatherer
+		f := factory.New(cfg, sess, map[string]prometheus.Collector{
+			"enhanced":         enhancedCollector,
+			"client":           client,
+			"standard.process": psCollector,
+			"standard.go":      goCollector,
+		})
 		handler := newHandler(f)
 		http.Handle("/metrics", handler)
 	}
@@ -97,11 +104,12 @@ type handler struct {
 
 func newHandler(factory *factory.Collectors) *handler {
 	h := &handler{factory: factory}
-	if innerHandler, err := h.innerHandler(); err != nil {
+	innerHandler, err := h.innerHandler()
+	if err != nil {
 		log.Fatalf("Couldn't create metrics handler: %s", err)
-	} else {
-		h.unfilteredHandler = innerHandler
 	}
+
+	h.unfilteredHandler = innerHandler
 	return h
 }
 
@@ -131,8 +139,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 	registry := prometheus.NewRegistry()
-	registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), "")) // from prometheus.DefaultGatherer
-	registry.MustRegister(prometheus.NewGoCollector())                     // from prometheus.DefaultGatherer
 
 	collectors := h.factory.Create(filters)
 

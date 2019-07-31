@@ -45,10 +45,10 @@ type Exporter struct {
 // New creates a new instance of a Exporter.
 // enableOverlapping is using for backward compatibility.
 // See: https://jira.percona.com/browse/PMM-1901.
-func New(config *config.Config, sessions *sessions.Sessions, enableMetrics OverlappingMetrics) *Exporter {
+func New(config *config.Config, sessions *sessions.Sessions, enableOverlapping OverlappingMetrics) *Exporter {
 	var m []Metric
 	m = append(m, Metrics...)
-	if enableMetrics {
+	if enableOverlapping {
 		m = append(m, MetricsOverlappingWithEnhancedCollector...)
 	}
 
