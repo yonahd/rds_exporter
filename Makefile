@@ -60,9 +60,8 @@ promu:
 	        GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
 	        $(GO) get github.com/prometheus/promu@latest
 
-ci-reviewdog:                   ## Runs reviewdog checks.
-	bin/golangci-lint run -c=.golangci-required.yml --out-format=line-number | bin/reviewdog -f=golangci-lint -level=error -reporter=github-pr-check
-	bin/golangci-lint run -c=.golangci.yml --out-format=line-number | bin/reviewdog -f=golangci-lint -level=error -reporter=github-pr-review
+check:
+	bin/golangci-lint run -c=.golangci.yml --out-format=line-number
 
 travis: build ci-reviewdog test-race codecov tarball docker
 
