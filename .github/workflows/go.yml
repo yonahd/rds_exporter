@@ -15,6 +15,9 @@ jobs:
             os: ubuntu-latest
             may-fail: true
     runs-on: ubuntu-latest
+    # The environment this job references
+    environment:
+      name: CI
     steps:
     - name: Set up Go release
       if: matrix.go-version != 'tip'
