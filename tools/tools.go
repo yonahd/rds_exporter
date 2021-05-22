@@ -1,3 +1,5 @@
+// rds_exporter
+
 //go:build tools
 // +build tools
 
