@@ -20,6 +20,8 @@ BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_NAME       ?= $(shell basename $(shell pwd))
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
+# defines what to use go get or go install https://golang.org/doc/go-get-install-deprecation
+GOINSTALL := $(shell echo "$$(go version)\ngo version go1.17" | sort --check=quiet --version-sort && echo 'go get' || echo 'go install')
 
 all: format build test
 
@@ -58,7 +60,7 @@ docker:
 promu:
 	@GOOS=$(shell uname -s | tr A-Z a-z) \
 	        GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-	        $(GO) get github.com/prometheus/promu@latest
+	        $(GOINSTALL) github.com/prometheus/promu@latest
 
 check:
 	bin/golangci-lint run -c=.golangci.yml --out-format=line-number
