@@ -21,7 +21,7 @@ DOCKER_IMAGE_NAME       ?= $(shell basename $(shell pwd))
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
 # defines what to use go get or go install https://golang.org/doc/go-get-install-deprecation
-GOINSTALL := $(shell $(GO) get github.com/prometheus/promu@latest && echo 'go get' || echo 'go install')
+GOINSTALL := $(shell $(GO) install github.com/prometheus/promu@latest > /dev/null 2>&1 && echo 'go install' || echo 'go get')
 
 all: format build test
 
