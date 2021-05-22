@@ -65,10 +65,10 @@ check:
 travis: build ci-reviewdog test-race codecov tarball docker
 
 codecov: gocoverutil
-	@gocoverutil -coverprofile=coverage.txt test $(pkgs)
+	@bin/gocoverutil -coverprofile=coverage.txt test $(pkgs)
 	@curl -s https://codecov.io/bash | bash -s - -X fix
 
 gocoverutil:
-	@$(GO) get -u github.com/AlekSi/gocoverutil
+	@$(GO) build -modfile=tools/go.mod -o bin/gocoverutil github.com/AlekSi/gocoverutil
 
 .PHONY: all style format build test vet tarball docker promu
