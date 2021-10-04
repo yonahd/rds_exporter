@@ -1,14 +1,12 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-
-## [Unreleased]
-Nothing yet.
-
+## [0.7.2]
+- Update README.md (#65)
+- Add the ReplicaLag metric (#51)
+- PMM-8207 Cleanup. (#57)
+- Bring back maxInterval=60 sec (#63)
+- Add docker multistage build (#61)
+- PMM-7902 Remove Go 1.15 (#60)
 
 ## [0.7.0] - 2020-06-02
 ### Added
