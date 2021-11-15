@@ -209,7 +209,6 @@ func buildCredentials(instance config.Instance) (*credentials.Credentials, error
 			},
 		}), nil
 	}
-
 	return nil, nil
 }
 
