@@ -212,7 +212,6 @@ func buildCredentials(instance config.Instance) (*credentials.Credentials, error
 	return nil, nil
 }
 
-
 // AllSessions returns all sessions and instances.
 func (s *Sessions) AllSessions() map[*session.Session][]Instance {
 	return s.sessions
