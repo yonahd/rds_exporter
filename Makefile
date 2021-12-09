@@ -53,6 +53,7 @@ tarball: promu
 docker:
 	@echo ">> building docker image $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+	@docker push "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 
 promu:
 	@GOOS=$(shell uname -s | tr A-Z a-z) \
